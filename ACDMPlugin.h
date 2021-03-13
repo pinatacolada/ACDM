@@ -1,5 +1,9 @@
 #pragma once
 #include "EuroScopePlugIn.h"
+#include <ctime>
+#include <chrono>
+#include <string>
+#include <list>
 
 using namespace EuroScopePlugIn;
 
@@ -8,6 +12,9 @@ class ACDMPlugin : public CPlugIn
 	public:
 		ACDMPlugin();
 		virtual ~ACDMPlugin();
+        std::chrono::system_clock::time_point nextTick;
+        CFlightPlanList depSeq;
+        std::list<std::string> cdmSeq;
 
         void OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
             EuroScopePlugIn::CRadarTarget RadarTarget,
@@ -17,5 +24,11 @@ class ACDMPlugin : public CPlugIn
             int* pColorCode,
             COLORREF* pRGB,
             double* pFontSize);
+        
+        std::string CheckEtd(CFlightPlan FlightPlan);
+
+        
 };
+
+
 

@@ -36,39 +36,59 @@ void ACDMPlugin::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
         return;
     }
 
+    std::string adep = FlightPlan.GetFlightPlanData().GetOrigin();
+    to_upper(adep);
 
-        std::string adep = FlightPlan.GetFlightPlanData().GetOrigin();
-        to_upper(adep);
+    if (adep.compare("LPPT") == 0) {
+        
+        CheckEtd(FlightPlan);
 
-        if (adep.compare("LPPT") == 0) {
-            
-            FlightPlan.GetFlightPlanData().SetEstimatedDepartureTime(CheckEtd(FlightPlan).c_str());
-
-        }
+    }
     
           
 }
 
-std::string ACDMPlugin::CheckEtd(CFlightPlan FlightPlan)
+void ACDMPlugin::CheckEtd(CFlightPlan FlightPlan)
 {
     std::string cs = FlightPlan.GetCallsign();    
     std::string etd = FlightPlan.GetFlightPlanData().GetEstimatedDepartureTime();
+    std::string rmk = FlightPlan.GetFlightPlanData().GetRemarks();
+    
+    std::string sDof = "DOF/990101";
+    std::string dofY;
+    std::string dofM;
+    std::string dofD;
+
     etd = std::string(4 - etd.length(), '0') + etd;
 
     std::string sEtdH = etd.substr(0, 2);
-    std::string sEtdM = etd.substr(etd.length() - 2);
+    std::string sEtdM = etd.substr(2);
 
-    time_t now = time(0);
+    int dofPos = 0;
+    std::smatch base_match;
 
-    struct tm* tmEtd = gmtime(&now);
+    if (std::regex_search(rmk, base_match, REGEX_DOF)) {
+       dofPos = base_match.position(0);
+       sDof = base_match[0].str();
+       rmk = rmk.substr(0, dofPos) + rmk.substr((dofPos + 10));
+    }
 
-    tmEtd->tm_hour = std::stoi(sEtdH);
-    tmEtd->tm_min = std::stoi(sEtdM);
+    dofY = sDof.substr(4, 2);
+    dofM = sDof.substr(6, 2);
+    dofD = sDof.substr(8, 2);
 
-    time_t ttEtd = mktime(tmEtd);
+    struct tm tmEtd = { 0 };
 
+    tmEtd.tm_year = std::stoi("20" + dofY) - 1900;
+    tmEtd.tm_mon = std::stoi(dofM) - 1;
+    tmEtd.tm_mday = std::stoi(dofD);
+    tmEtd.tm_hour = std::stoi(sEtdH);
+    tmEtd.tm_min = std::stoi(sEtdM);
+
+    time_t ttEtd = mktime(&tmEtd);
     time_t etdP = ttEtd + 1800;
     time_t etdM = ttEtd - 1800;
+    time_t now = time(0);
 
     if (now <= etdM || now >= etdP) {
         now += 1800;
@@ -80,9 +100,25 @@ std::string ACDMPlugin::CheckEtd(CFlightPlan FlightPlan)
         delayH = std::string(2 - delayH.length(), '0') + delayH;
         delayM = std::string(2 - delayM.length(), '0') + delayM;
 
-        return delayH + delayM;
+        std::string newDofY = std::to_string(nowTm->tm_year + 1900 - 2000);
+        std::string newDofM = std::to_string(nowTm->tm_mon + 1);
+        std::string newDofD = std::to_string(nowTm->tm_mday);
 
+        newDofY = std::string(2 - newDofY.length(), '0') + newDofY;
+        newDofM = std::string(2 - newDofM.length(), '0') + newDofM;
+        newDofD = std::string(2 - newDofD.length(), '0') + newDofD;
+
+        std::string newDof = "DOF/" + newDofY + newDofM + newDofD;
+
+        rmk = rmk.substr(0, dofPos) + newDof + rmk.substr((dofPos));
+
+        if (rmk.compare(dofPos + 10, 1, " ") != 0) {
+            rmk = rmk.substr(0, dofPos + 10) + " " +rmk.substr(dofPos + 10);
+        }
+
+        FlightPlan.GetFlightPlanData().SetEstimatedDepartureTime( (delayH + delayM).c_str() );
+        FlightPlan.GetFlightPlanData().SetRemarks(rmk.c_str() );
+        FlightPlan.GetFlightPlanData().AmendFlightPlan();
     }
-    return etd;
 }
 

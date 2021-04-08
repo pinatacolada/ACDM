@@ -86,12 +86,12 @@ void ACDMPlugin::CheckEtd(CFlightPlan FlightPlan)
     tmEtd.tm_min = std::stoi(sEtdM);
 
     time_t ttEtd = mktime(&tmEtd);
-    time_t etdP = ttEtd + 1800;
-    time_t etdM = ttEtd - 1800;
+    time_t etdP = ttEtd + ACDM_TOBT_LATEST;
+    time_t etdM = ttEtd - ACDM_TOBT_EARLIEST;
     time_t now = time(0);
 
     if (now <= etdM || now >= etdP) {
-        now += 1800;
+        now += ACDM_TOBT_LATEST;
         struct tm* nowTm = gmtime(&now);
 
         std::string delayH = std::to_string(nowTm->tm_hour);

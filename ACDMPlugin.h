@@ -26,6 +26,8 @@ class ACDMPlugin : public CPlugIn
         
         void CheckEtd(CFlightPlan FlightPlan);
 
+        void ACDMPlugin::OnTimer(int Counter);
+
        
 };
 

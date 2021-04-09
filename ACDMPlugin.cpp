@@ -48,6 +48,13 @@ void ACDMPlugin::OnGetTagItem(EuroScopePlugIn::CFlightPlan FlightPlan,
           
 }
 
+void ACDMPlugin::OnTimer(int Counter) {
+    DisplayUserMessage("A-CDM", "A-CDM", "beep boop", TRUE, TRUE, TRUE, TRUE, FALSE);
+}
+
+
+
+
 void ACDMPlugin::CheckEtd(CFlightPlan FlightPlan)
 {
     std::string cs = FlightPlan.GetCallsign();    
